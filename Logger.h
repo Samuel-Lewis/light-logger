@@ -5,7 +5,7 @@
 	Light weight logger to be used anywhere in any project.
 
 	@Author     Samuel Lewis
-	@Updated	9th March 2017
+	@Updated 	9th March 2017
 	@Version	1.0 ?
 
 >> SETUP <<
@@ -31,8 +31,8 @@
 
 >> USAGE <<
 
-	Where ever you want to log, use the level name:
-		INFO() << "words words " << 452 << 'a' << myVar;
+	Where ever you want to log, use the level name and pipe in your stuff:
+		INFO() << "words words " << 452 << 'a' << getSomeValue();
 		FATAL() << "could not compute things " << getFailCode();
 
 	Any data type you want to print must be compatible with std::ostream
@@ -40,13 +40,6 @@
 	If you ever invoke FATAL(), the process will exit with status EXIT_FAILURE.
 
 */
-
-
-
-
-
-
-
 
 #ifndef LOGGER_H
 #define LOGGER_H
