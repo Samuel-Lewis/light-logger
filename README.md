@@ -44,3 +44,9 @@ FATAL() << "could not compute things ";
 Any data type you want to print must be compatible with `std::ostream`.
 
 If you ever invoke `FATAL()`, the process will exit with status `EXIT_FAILURE`.
+
+If you want to track scope of a function, first line of the function, call
+```
+METHOD();
+```
+This will indent the logs, and then finish when the function goes out of scope. Warning, this can get expensive.
