@@ -54,48 +54,44 @@
 #include <iostream>
 #include <ctime>
 
-
-
 #define _LOG_FILENAME_MAX 8
 
 
 #define _LOG_FORMAT(L,A) Logger().gen(L,A,__FILE__,__LINE__)
-#define _LOG_NULLSTREAM Logger::nullStream.clear(); Logger::nullStream
-
 #if defined(LOG_FATAL) || defined(LOG_ERROR) || defined(LOG_WARN) || defined(LOG_INFO) || defined(LOG_DEBUG) || defined(LOG_VERBOSE)
 	#define FATAL() _LOG_FORMAT("FATAL","1;41;37m")
 #else
-	#define FATAL() _LOG_NULLSTREAM
+	#define FATAL() Logger::nullStream()
 #endif
 
 #if defined(LOG_ERROR) || defined(LOG_WARN) || defined(LOG_INFO) || defined(LOG_DEBUG) || defined(LOG_VERBOSE)
 	#define ERROR() _LOG_FORMAT("ERROR","1;31m")
 #else
-	#define ERROR() _LOG_NULLSTREAM
+	#define ERROR() Logger::nullStream()
 #endif
 
 #if defined(LOG_WARN) || defined(LOG_INFO) || defined(LOG_DEBUG) || defined(LOG_VERBOSE)
 	#define WARN() _LOG_FORMAT("WARN ","[1;33m")
 #else
-	#define WARN() _LOG_NULLSTREAM
+	#define WARN() Logger::nullStream()
 #endif
 
 #if defined(LOG_INFO) || defined(LOG_DEBUG) || defined(LOG_VERBOSE)
 	#define INFO() _LOG_FORMAT("INFO ","35m")
 #else
-	#define INFO() _LOG_NULLSTREAM
+	#define INFO() Logger::nullStream()
 #endif
 
 #if defined(LOG_DEBUG) || defined(LOG_VERBOSE)
 	#define DEBUG() _LOG_FORMAT("DEBUG","0m")
 #else
-	#define DEBUG() _LOG_NULLSTREAM
+	#define DEBUG() Logger::nullStream()
 #endif
 
 #if defined(LOG_VERBOSE)
 	#define VERBOSE() _LOG_FORMAT("VERBO","0m")
 #else
-	#define VERBOSE() _LOG_NULLSTREAM
+	#define VERBOSE() Logger::nullStream()
 #endif
 
 
@@ -107,7 +103,7 @@ public:
 	LoggerScope(std::string);
 	~LoggerScope();
 
-	static int indentLevel;
+	static int indentLevel(int);
 private:
 	std::string name;
 };
@@ -117,8 +113,7 @@ public:
 	Logger();
 	~Logger();
 	std::ostringstream& gen(std::string, std::string, std::string, int);
-
-	static std::ostringstream nullStream;
+	static std::ostringstream& nullStream();
 
 private:
 	std::ostringstream oss;
@@ -167,9 +162,15 @@ std::ostringstream& Logger::gen(std::string label, std::string ansi, std::string
 
 	oss << "]:" << file << ":";
 	oss << std::setw(3) << std::setfill(' ') << line << ": ";
-	oss << std::string(LoggerScope::indentLevel < 0 ? 0 : LoggerScope::indentLevel*2 , ' ');
+	oss << std::string(LoggerScope::indentLevel(0)*2, ' ');
 
 	return oss;
+}
+
+std::ostringstream& Logger::nullStream() {
+	static std::ostringstream o;
+	o.clear();
+	return o;
 }
 
 std::string Logger::getTime() {
@@ -186,10 +187,8 @@ std::string Logger::getTime() {
 	return str;
 }
 
-std::ostringstream Logger::nullStream;
 
-
-
+// LOGGER SCOPE
 
 #define _METHOD_FORMAT(f) LoggerScope _LoggerScope_##f##_scope(f)
 #define METHOD() _METHOD_FORMAT(__FUNCTION__)
@@ -197,14 +196,18 @@ std::ostringstream Logger::nullStream;
 LoggerScope::LoggerScope(std::string n) {
 	name = n;
 	INFO() << "> START: " << name;
-	indentLevel++;
+	indentLevel(1);
 }
 
 LoggerScope::~LoggerScope() {
-	indentLevel--;
+	indentLevel(-1);
 	INFO() << "< END: " << name;
 }
 
-int LoggerScope::indentLevel = 0;
+int LoggerScope::indentLevel(int mod) {
+	static int level;
+	level += mod;
+	return level;
+}
 
 #endif // LOGGER_H
