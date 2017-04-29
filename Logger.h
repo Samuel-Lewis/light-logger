@@ -5,8 +5,8 @@
 	Light weight logger to be used anywhere in any project.
 
 	@Author     Samuel Lewis
-	@Updated 	9th March 2017
-	@Version	1.0 ?
+	@Updated 	29th April 2017
+	@Version	1.1
 
 >> SETUP <<
 
@@ -33,7 +33,7 @@
 
 	Where ever you want to log, use the level name and pipe in your stuff:
 		INFO() << "words words " << 452 << 'a' << getSomeValue();
-		FATAL() << "could not compute things " << getFailCode();
+		FATAL() << "could not compute things ";
 
 	Any data type you want to print must be compatible with std::ostream
 
@@ -46,96 +46,101 @@
 
 #include <string>
 #include <sstream>
-#include <cstdio>
+#include <iostream>
 #include <ctime>
 
-#define _LOG_FORMAT(L) Logger().gen(L,__FILE__,__LINE__)
-#define FATAL() _LOG_FORMAT(logFATAL)
-#define ERROR() _LOG_FORMAT(logERROR)
-#define WARN() _LOG_FORMAT(logWARN)
-#define INFO() _LOG_FORMAT(logINFO)
-#define DEBUG() _LOG_FORMAT(logDEBUG)
-#define VERBOSE() _LOG_FORMAT(logVERBOSE)
+#define _LOG_FORMAT(L,A) Logger().gen(L,A,__FILE__,__LINE__,__FUNCTION__)
 
-// Levels, FATAL will exit program
-enum kLogLevel {
-	logNONE = -1,
-	logFATAL,
-	logERROR,
-	logWARN,
-	logINFO,
-	logDEBUG,
-	logVERBOSE
-};
+#if defined(LOG_FATAL) || defined(LOG_ERROR) || defined(LOG_WARN) || defined(LOG_INFO) || defined(LOG_DEBUG) || defined(LOG_VERBOSE)
+	#define FATAL() _LOG_FORMAT("FATAL","1;41;37m")
+#else
+	#define FATAL() _LoggerNullStream
+#endif
 
-// Conversion from enum to string
-static const std::string _LoggerLevelStrings[] = {"FATAL","ERROR","WARN ","INFO ","DEBUG","VERBOS"};
-static const std::string _LoggerLevelStringsANSI[] = {"\033[1;41;37mFATAL","\033[1;31mERROR","\033[1;33mWARN ","\033[35mINFO ","DEBUG","VERBOS"};
+#if defined(LOG_ERROR) || defined(LOG_WARN) || defined(LOG_INFO) || defined(LOG_DEBUG) || defined(LOG_VERBOSE)
+	#define ERROR() _LOG_FORMAT("ERROR","1;31m")
+#else
+	#define ERROR() _LoggerNullStream
+#endif
+
+#if defined(LOG_WARN) || defined(LOG_INFO) || defined(LOG_DEBUG) || defined(LOG_VERBOSE)
+	#define WARN() _LOG_FORMAT("WARN ","[1;33m")
+#else
+	#define WARN() _LoggerNullStream
+#endif
+
+#if defined(LOG_INFO) || defined(LOG_DEBUG) || defined(LOG_VERBOSE)
+	#define INFO() _LOG_FORMAT("INFO ","35m")
+#else
+	#define INFO() _LoggerNullStream
+#endif
+
+#if defined(LOG_DEBUG) || defined(LOG_VERBOSE)
+	#define DEBUG() _LOG_FORMAT("DEBUG","0m")
+#else
+	#define DEBUG() _LoggerNullStream
+#endif
+
+#if defined(LOG_VERBOSE)
+	#define VERBOSE() _LOG_FORMAT("VERBO","0m")
+#else
+	#define VERBOSE() _LoggerNullStream
+#endif
+
+std::ostringstream _LoggerNullStream;
 
 class Logger {
 public:
 	Logger() {};
 	~Logger() {
-		kLogLevel levelThresh = logNONE;
+		// Print out, without delay ;)
+		std::cerr << oss.str() << std::endl;
 
-		// Check debug level (specified at compile, or where ever)
-		#ifdef LOG_FATAL
-			levelThresh = logFATAL;
-		#elif LOG_ERROR
-			levelThresh = logERROR;
-		#elif LOG_WARN
-			levelThresh = logWARN;
-		#elif LOG_INFO
-			levelThresh = logINFO;
-		#elif LOG_DEBUG
-			levelThresh = logDEBUG;
-		#elif LOG_VERBOSE
-			levelThresh = logVERBOSE;
-		#endif
-
-		if (setLevel <= levelThresh) {
-			// Print out, without delay ;)
-			oss << std::endl;
-			fprintf(stderr, "%s", oss.str().c_str());
-			fflush(stderr);
-
-			// If FATAL, crash and burn
-			if (setLevel == logFATAL) {
-				std::exit(EXIT_FAILURE);
-			}
+		// If FATAL, crash and burn
+		if (setLevel == "FATAL") {
+			std::exit(EXIT_FAILURE);
 		}
 	}
 
 	// Generate ostream (with meta), return to inline call position
-	std::ostringstream& gen(kLogLevel level, std::string file, int line) {
+	std::ostringstream& gen(std::string label, std::string ansi, std::string file, int line, std::string func) {
 		// Format: [20:04:09][FATAL]:main.cpp:6: ...
-		setLevel = level;
+		setLevel = label;
 		oss << "[" << getTime() << "][";
 
+		// Supress usage warnings
+		// Func to be used for future feature
+		ansi = ansi;
+		func = func;
+
 		#ifdef LOG_USE_ANSI
-			oss << _LoggerLevelStringsANSI[level];
-			oss << "\033[0m";
+			oss << "\033[" << ansi << label << "\033[0m";
 		#else
-			oss << _LoggerLevelStrings[level];
+			oss << label;
 		#endif
 
 		oss << "]:" << file << ":" << line << ": ";
 
 		return oss;
 	}
+
 private:
 	std::ostringstream oss;
 	std::string getTime() {
-		// http://stackoverflow.com/questions/997512/string-representation-of-time-t
-		std::time_t now = std::time(NULL);
-		std::tm * ptm = std::localtime(&now);
+		// C++98 get time as 15:03:12
+		time_t rawtime;
+		struct tm * timeinfo;
 		char buffer[12];
-		// Format: 20:20:00
-		std::strftime(buffer, 12, "%H:%M:%S", ptm);
 
-		return buffer;
+		time(&rawtime);
+		timeinfo = localtime(&rawtime);
+
+		strftime(buffer,sizeof(buffer),"%H:%M:%S",timeinfo);
+		std::string str(buffer);
+		return str;
 	}
-	kLogLevel setLevel;
+
+	std::string setLevel;
 };
 
 #endif // LOGGER_H
