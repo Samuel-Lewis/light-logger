@@ -49,42 +49,43 @@
 #include <iostream>
 #include <ctime>
 
-#define _LOG_FORMAT(L,A) Logger().gen(L,A,__FILE__,__LINE__,__FUNCTION__)
+#define _LOG_FORMAT(L,A) Logger().gen(L,A,__FILE__,__LINE__)
+#define _LOG_NULLSTREAM _LoggerNullStream.clear(); _LoggerNullStream
 
 #if defined(LOG_FATAL) || defined(LOG_ERROR) || defined(LOG_WARN) || defined(LOG_INFO) || defined(LOG_DEBUG) || defined(LOG_VERBOSE)
 	#define FATAL() _LOG_FORMAT("FATAL","1;41;37m")
 #else
-	#define FATAL() _LoggerNullStream
+	#define FATAL() _LOG_NULLSTREAM
 #endif
 
 #if defined(LOG_ERROR) || defined(LOG_WARN) || defined(LOG_INFO) || defined(LOG_DEBUG) || defined(LOG_VERBOSE)
 	#define ERROR() _LOG_FORMAT("ERROR","1;31m")
 #else
-	#define ERROR() _LoggerNullStream
+	#define ERROR() _LOG_NULLSTREAM
 #endif
 
 #if defined(LOG_WARN) || defined(LOG_INFO) || defined(LOG_DEBUG) || defined(LOG_VERBOSE)
 	#define WARN() _LOG_FORMAT("WARN ","[1;33m")
 #else
-	#define WARN() _LoggerNullStream
+	#define WARN() _LOG_NULLSTREAM
 #endif
 
 #if defined(LOG_INFO) || defined(LOG_DEBUG) || defined(LOG_VERBOSE)
 	#define INFO() _LOG_FORMAT("INFO ","35m")
 #else
-	#define INFO() _LoggerNullStream
+	#define INFO() _LOG_NULLSTREAM
 #endif
 
 #if defined(LOG_DEBUG) || defined(LOG_VERBOSE)
 	#define DEBUG() _LOG_FORMAT("DEBUG","0m")
 #else
-	#define DEBUG() _LoggerNullStream
+	#define DEBUG() _LOG_NULLSTREAM
 #endif
 
 #if defined(LOG_VERBOSE)
 	#define VERBOSE() _LOG_FORMAT("VERBO","0m")
 #else
-	#define VERBOSE() _LoggerNullStream
+	#define VERBOSE() _LOG_NULLSTREAM
 #endif
 
 std::ostringstream _LoggerNullStream;
@@ -98,20 +99,22 @@ public:
 
 		// If FATAL, crash and burn
 		if (setLevel == "FATAL") {
+
 			std::exit(EXIT_FAILURE);
 		}
+
+		// Clear the null log stream, to hopefully save memory.
+		_LoggerNullStream.clear();
 	}
 
 	// Generate ostream (with meta), return to inline call position
-	std::ostringstream& gen(std::string label, std::string ansi, std::string file, int line, std::string func) {
+	std::ostringstream& gen(std::string label, std::string ansi, std::string file, int line) {
 		// Format: [20:04:09][FATAL]:main.cpp:6: ...
 		setLevel = label;
 		oss << "[" << getTime() << "][";
 
 		// Supress usage warnings
-		// Func to be used for future feature
 		ansi = ansi;
-		func = func;
 
 		#ifdef LOG_USE_ANSI
 			oss << "\033[" << ansi << label << "\033[0m";
@@ -141,6 +144,7 @@ private:
 	}
 
 	std::string setLevel;
+
 };
 
 #endif // LOGGER_H
