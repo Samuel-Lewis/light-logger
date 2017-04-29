@@ -1,7 +1,6 @@
 # HEADER ONLY LOGGER
 
-Light weight logger to be used anywhere in any project.
-Version 0.1?
+Light weight logger to be used anywhere in any C++ project.
 
 ## SETUP
 
@@ -29,17 +28,17 @@ Or include in your compilation
 -DLOG_INFO
 ```
 
-If your system supports ANSI colour codes, you can additionally include this, by including
+If your system does not support ANSI colour codes, you can additionally include this, to disable
 ```
-LOG_USE_ANSI
+LOG_NO_ANSI
 ```
 
 ## USAGE
 
 Where ever you want to log, use the level name and pipe in your stuff:
 ```
-INFO() << "words words " << 452 << 'a' << getSomeValue();;
-FATAL() << "could not compute things " << getFailCode();
+INFO() << "words words " << 452 << 'a' << getSomeValue();
+FATAL() << "could not compute things ";
 ```
 
 Any data type you want to print must be compatible with `std::ostream`.
