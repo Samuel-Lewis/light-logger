@@ -40,7 +40,7 @@
 	If you ever invoke FATAL(), the process will exit with status EXIT_FAILURE.
 
 	If you want to track scope of a function, first line of the function, call
-		METHOD();
+		METHOD()
 	This will indent the logs, and then finish when the function goes out of scope. Warning, this can get expensive.
 
 */
@@ -57,46 +57,46 @@
 #define _LOG_FILENAME_MAX 12
 
 #define _LOG_FORMAT(L,A) Logger().gen(L,A,__FILE__,__LINE__)
-// #define _LOGGER_NULLSTREAM Logger::nullStream.clear(); Logger::nullStream
-#define _LOGGER_NULLSTREAM Logger::nullStream()
 #if defined(LOG_FATAL) || defined(LOG_ERROR) || defined(LOG_WARN) || defined(LOG_INFO) || defined(LOG_DEBUG) || defined(LOG_VERBOSE)
-	#define FATAL() _LOG_FORMAT("FATAL","1;41;37m")
+	#define FATAL() _LOG_FORMAT("FATAL ","1;41;37m")
 #else
-	#define FATAL() _LOGGER_NULLSTREAM
+	#define FATAL() Logger::nullStream()
 #endif
 
 #if defined(LOG_ERROR) || defined(LOG_WARN) || defined(LOG_INFO) || defined(LOG_DEBUG) || defined(LOG_VERBOSE)
-	#define ERROR() _LOG_FORMAT("ERROR","1;31m")
+	#define ERROR() _LOG_FORMAT("ERROR ","1;31m")
 #else
-	#define ERROR() _LOGGER_NULLSTREAM
+	#define ERROR() Logger::nullStream()
 #endif
 
 #if defined(LOG_WARN) || defined(LOG_INFO) || defined(LOG_DEBUG) || defined(LOG_VERBOSE)
-	#define WARN() _LOG_FORMAT("WARN ","[1;33m")
+	#define WARN() _LOG_FORMAT(" WARN ","[1;33m")
 #else
-	#define WARN() _LOGGER_NULLSTREAM
+	#define WARN() Logger::nullStream()
 #endif
 
 #if defined(LOG_INFO) || defined(LOG_DEBUG) || defined(LOG_VERBOSE)
-	#define INFO() _LOG_FORMAT("INFO ","35m")
+	#define INFO() _LOG_FORMAT(" INFO ","35m")
 #else
-	#define INFO() _LOGGER_NULLSTREAM
+	#define INFO() Logger::nullStream()
 #endif
 
 #if defined(LOG_DEBUG) || defined(LOG_VERBOSE)
-	#define DEBUG() _LOG_FORMAT("DEBUG","0m")
+	#define DEBUG() _LOG_FORMAT("DEBUG ","0m")
 
+	#define METHOD_LOG() _LOG_FORMAT("METHOD","36m")
 	#define _METHOD_FORMAT(f) LoggerScope _LoggerScope_##f##_scope(f)
-	#define METHOD() _METHOD_FORMAT(__FUNCTION__); _LOG_FORMAT("METH ","36m") << "> START: " << __FUNCTION__ << " | "
+	#define METHOD() _METHOD_FORMAT(__FUNCTION__); METHOD_LOG() << "> START: " << __FUNCTION__ << " | "
 #else
-	#define DEBUG() _LOGGER_NULLSTREAM
-	#define METHOD() _LOGGER_NULLSTREAM
+	#define DEBUG() Logger::nullStream()
+	#define METHOD() Logger::nullStream()
+	#define METHOD_LOG() Logger::nullStream()
 #endif
 
 #if defined(LOG_VERBOSE)
-	#define VERBOSE() _LOG_FORMAT("VERBO","0m")
+	#define VERBOSE() _LOG_FORMAT("VERBOS","0m")
 #else
-	#define VERBOSE() _LOGGER_NULLSTREAM
+	#define VERBOSE() Logger::nullStream()
 #endif
 
 // LOGGER SCOPE
@@ -148,7 +148,7 @@ public:
 	}
 
 	// Used for throwing away inputs
-	std::ostringstream nullStream() {
+	static std::ostringstream nullStream() {
 		std::ostringstream o;
 		return o;
 	}
@@ -185,7 +185,7 @@ public:
 	}
 
 	~LoggerScope() {
-		_LOG_FORMAT("METH ","36m") << "< END: " << name;
+		METHOD_LOG() << "< END: " << name;
 		Logger::indentLevel(-1);
 	}
 private:
