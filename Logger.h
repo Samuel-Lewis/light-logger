@@ -6,7 +6,7 @@
 
 	@Author     Samuel Lewis
 	@Updated 	29th April 2017
-	@Version	1.1
+	@Version	1.2
 
 >> SETUP <<
 
@@ -26,8 +26,8 @@
 	Or include in your compilation
 		-DLOG_INFO
 
-	If your system supports ANSI colour codes, you can additionally include this, by including
-		LOG_USE_ANSI
+	If your system does not support ANSI colour codes, you can additionally include this, to disable
+		LOG_NO_ANSI
 
 >> USAGE <<
 
@@ -116,10 +116,10 @@ public:
 		// Supress usage warnings
 		ansi = ansi;
 
-		#ifdef LOG_USE_ANSI
-			oss << "\033[" << ansi << label << "\033[0m";
-		#else
+		#ifdef LOG_NO_ANSI
 			oss << label;
+		#else
+			oss << "\033[" << ansi << label << "\033[0m";
 		#endif
 
 		oss << "]:" << file << ":" << line << ": ";
