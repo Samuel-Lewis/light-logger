@@ -56,77 +56,81 @@
 
 #define _LOG_FILENAME_MAX 12
 
-#define _LOG_FORMAT(L,A) Logger().gen(L,A,__FILE__,__LINE__)
+#define LOGGER_LOG(label, ansi) Logger().gen(label,ansi,__FILE__,__LINE__)
+
+// FATAL
 #if defined(LOG_FATAL) || defined(LOG_ERROR) || defined(LOG_WARN) || defined(LOG_INFO) || defined(LOG_DEBUG) || defined(LOG_VERBOSE)
-	#define FATAL() _LOG_FORMAT("FATAL ","1;41;37m")
+	#define FATAL() LOGGER_LOG("FATAL","1;41;37m")
 #else
-	#define FATAL() Logger::nullStream()
+	#define FATAL() if (false) std::cerr
 #endif
 
+// ERROR
 #if defined(LOG_ERROR) || defined(LOG_WARN) || defined(LOG_INFO) || defined(LOG_DEBUG) || defined(LOG_VERBOSE)
-	#define ERROR() _LOG_FORMAT("ERROR ","1;31m")
+	#define ERROR() LOGGER_LOG("ERROR","1;31m")
 #else
-	#define ERROR() Logger::nullStream()
+	#define ERROR() if (false) std::cerr
 #endif
 
+// WARN
 #if defined(LOG_WARN) || defined(LOG_INFO) || defined(LOG_DEBUG) || defined(LOG_VERBOSE)
-	#define WARN() _LOG_FORMAT(" WARN ","[1;33m")
+	#define WARN() LOGGER_LOG("WARN ","1;33m")
 #else
-	#define WARN() Logger::nullStream()
+	#define WARN() if (false) std::cerr
 #endif
 
+// INFO
 #if defined(LOG_INFO) || defined(LOG_DEBUG) || defined(LOG_VERBOSE)
-	#define INFO() _LOG_FORMAT(" INFO ","35m")
+	#define INFO() LOGGER_LOG("INFO ","35m")
 #else
-	#define INFO() Logger::nullStream()
+	#define INFO() if (false) std::cerr
 #endif
 
+// DEBUG and METHOD
 #if defined(LOG_DEBUG) || defined(LOG_VERBOSE)
-	#define DEBUG() _LOG_FORMAT("DEBUG ","0m")
+	#define DEBUG() LOGGER_LOG("DEBUG","0m")
 
-	#define METHOD_LOG() _LOG_FORMAT("METHOD","36m")
-	#define _METHOD_FORMAT(f) LoggerScope _LoggerScope_##f##_scope(f)
-	#define METHOD() _METHOD_FORMAT(__FUNCTION__); METHOD_LOG() << "> START: " << __FUNCTION__ << " | "
+	#define _LOGGER_METHOD_FORMAT(f) LoggerScope _LoggerScope_##f##_scope(f);
+	#define METHOD() _LOGGER_METHOD_FORMAT(__FUNCTION__) LOGGER_LOG("METHD","36m") << "> START: " << __FUNCTION__ << " | "
 #else
-	#define DEBUG() Logger::nullStream()
-	#define METHOD() Logger::nullStream()
-	#define METHOD_LOG() Logger::nullStream()
+	#define DEBUG() if (false) std::cerr
+	#define METHOD() if (false) std::cerr
 #endif
 
+// VERBOSE
 #if defined(LOG_VERBOSE)
-	#define VERBOSE() _LOG_FORMAT("VERBOS","0m")
+	#define VERBOSE() LOGGER_LOG("VERBO","0m")
 #else
-	#define VERBOSE() Logger::nullStream()
+	#define VERBOSE() if (false) std::cerr
 #endif
-
-// LOGGER SCOPE
 
 class Logger {
 public:
 	Logger() {}
 	~Logger() {
 		// Print out, without delay ;)
-		std::cerr << oss.str() << std::endl;
+		std::cerr << _oss.str() << std::endl;
 
 		// If FATAL, crash and burn
-		if (setLevel == "FATAL") {
+		if (currentLabel == "FATAL") {
 
 			std::exit(EXIT_FAILURE);
 		}
 	}
 
+	// Generate the stream to feed into
 	std::ostringstream& gen(std::string label, std::string ansi, std::string file, int line) {
 		// Format: [20:04:09][FATAL]:main.cpp:6: ...
-		setLevel = label;
-		oss << "[" << getTime() << "][";
+		currentLabel = label;
+		_oss << "[" << _getTime() << "][";
 
 		// Supress usage warnings
 		ansi = ansi;
 
 		#ifdef LOG_NO_ANSI
-			oss << label;
+			_oss << label;
 		#else
-			oss << "\033[" << ansi << label << "\033[0m";
+			_oss << "\033[" << ansi << label << "\033[0m";
 		#endif
 
 		// Remove leading path name
@@ -140,19 +144,14 @@ public:
 			file += std::string(_LOG_FILENAME_MAX - file.size(), ' ');
 		}
 
-		oss << "]:" << file << ":";
-		oss << std::setw(3) << std::setfill(' ') << line << ": ";
-		oss << std::string(indentLevel(0)*2, ' ');
+		_oss << "]:" << file << ":";
+		_oss << std::setw(3) << std::setfill(' ') << line << ": ";
+		_oss << std::string(indentLevel(0)*2, ' ');
 
-		return oss;
+		return _oss;
 	}
 
-	// Used for throwing away inputs
-	static std::ostringstream nullStream() {
-		std::ostringstream o;
-		return o;
-	}
-
+	// Sudo-static indent level var
 	static int indentLevel(int mod) {
 		static int i;
 		i += mod;
@@ -160,7 +159,7 @@ public:
 	}
 
 private:
-	std::string getTime() {
+	std::string _getTime() {
 		// C++98 get time as 15:03:12
 		time_t rawtime;
 		struct tm * timeinfo;
@@ -173,23 +172,23 @@ private:
 		std::string str(buffer);
 		return str;
 	}
-	std::string setLevel;
-	std::ostringstream oss;
+	std::string currentLabel;
+	std::ostringstream _oss;
 };
 
 class LoggerScope {
 public:
 	LoggerScope(std::string n) {
-		name = n;
+		_methodName = n;
 		Logger::indentLevel(1);
 	}
 
 	~LoggerScope() {
-		METHOD_LOG() << "< END: " << name;
+		LOGGER_LOG("METHD","36m") << "< END: " << _methodName;
 		Logger::indentLevel(-1);
 	}
 private:
-	std::string name;
+	std::string _methodName;
 };
 
 #endif // LOGGER_H
