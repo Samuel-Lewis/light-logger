@@ -28,7 +28,7 @@ Or include in your compilation
 -DLOG_INFO
 ```
 
-If your system does not support ANSI colour codes, you can additionally include this, to disable
+If your system does not support ANSI colour codes, you can disable these, by also defining
 ```
 LOG_NO_ANSI
 ```
@@ -38,7 +38,7 @@ LOG_NO_ANSI
 Where ever you want to log, use the level name and pipe in your stuff:
 ```
 INFO() << "words words " << 452 << 'a' << getSomeValue();
-FATAL() << "could not compute things ";
+FATAL() << "could not compute things";
 ```
 
 Any data type you want to print must be compatible with `std::ostream`.
@@ -50,3 +50,8 @@ If you want to track scope of a function, first line of the function, call
 METHOD();
 ```
 This will indent the logs, and then finish when the function goes out of scope. Warning, this can get expensive.
+
+You are still able to give some input:
+```
+METHOD() << nameOfDog();
+```

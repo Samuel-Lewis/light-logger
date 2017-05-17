@@ -5,8 +5,8 @@
 	Light weight logger to be used anywhere in any project.
 
 	@Author     Samuel Lewis
-	@Updated 	29th April 2017
-	@Version	1.2
+	@Updated 	17th May 2017
+	@Version	1.3
 
 >> SETUP <<
 
@@ -42,6 +42,8 @@
 	If you want to track scope of a function, first line of the function, call
 		METHOD()
 	This will indent the logs, and then finish when the function goes out of scope. Warning, this can get expensive.
+	You are still able to give some input:
+		METHOD() << nameOfDog();
 
 */
 
@@ -54,7 +56,7 @@
 #include <iostream>
 #include <ctime>
 
-#define _LOG_FILENAME_MAX 12
+#define _LOG_FILENAME_MAX 8
 
 #define LOGGER_LOG(label, ansi) Logger().gen(label,ansi,__FILE__,__LINE__)
 
@@ -124,17 +126,17 @@ public:
 		currentLabel = label;
 		_oss << "[" << _getTime() << "][";
 
-		// Supress usage warnings
-		ansi = ansi;
-
 		#ifdef LOG_NO_ANSI
+			// Supress usage warnings
+			(void)ansi;
 			_oss << label;
 		#else
 			_oss << "\033[" << ansi << label << "\033[0m";
 		#endif
 
-		// Remove leading path name
-		file = file.erase(0, file.find_last_of("\\/")+1);
+		// Remove leading path name, and file extension
+		file.erase(0, file.find_last_of("\\/")+1);
+		file.erase(file.find_last_of("."));
 
 		// Trim/expand to consistent size
 		if (file.size() > _LOG_FILENAME_MAX) {
