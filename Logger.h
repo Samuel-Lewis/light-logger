@@ -110,9 +110,7 @@ class Logger {
 public:
 	Logger() {}
 	~Logger() {
-
-
-		std::stringstream msg; //_oss.str();
+		std::stringstream msg;
 
 		#ifdef LOG_NO_ANSI
 			// Supress usage warnings
@@ -141,11 +139,8 @@ public:
 
 		// Append actual message 
 		msg << _oss.str();
-		
+		// Clear input, for rearrangment		
 		_oss.str(std::string());
-
-
-		// Format: [20:04:09][FATAL]:main.cpp:6: ...
 	
 		// Compare everything in message but timestamp
 		if (msg.str() == _lastLine("")) {
@@ -160,24 +155,22 @@ public:
 			_oss << "[" << _getTime() << "][" << msg.str();
 		}
 
-
+		// ACTUAL PRINT OUT
 		std::cerr << _oss.str();
 
 		// If FATAL, crash and burn
 		if (_label == "FATAL") {
-
+			std::cerr << std::endl;
 			std::exit(EXIT_FAILURE);
 		}
 	}
 
 	// Generate the stream to feed into
 	std::ostringstream& gen(std::string label, std::string ansi, std::string file, int line) {
-
 		_label = label;
 		_ansi = ansi;
 		_file = file;
 		_line = line;
-
 		return _oss;
 	}
 
@@ -187,7 +180,6 @@ public:
 		i += mod;
 		return i;
 	}
-
 
 
 private:
@@ -205,9 +197,11 @@ private:
 		return str;
 	}
 
+	// Track number of times previous line appeared
 	static int _numRepeats(int n) {
 		static int repeats;
 		if (n == -1) {
+			// Reset
 			repeats = 0;
 			return repeats;
 		} else {
@@ -215,18 +209,19 @@ private:
 		}
 	}
 
+	// Track what the previous line was
 	static std::string _lastLine(std::string nextLine) {
 		static std::string s;
-
 		if (nextLine != "") {
 			s = nextLine;
 		}
-
 		return s;
 	}
 
+	// Returned to user for input
 	std::ostringstream _oss;
 
+	// Used to carry from input to callback deconstructor
 	std::string _label;
 	std::string _ansi;
 	std::string _file;
