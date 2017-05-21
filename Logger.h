@@ -110,11 +110,61 @@ class Logger {
 public:
 	Logger() {}
 	~Logger() {
-		// Print out, without delay ;)
-		std::cerr << _oss.str() << std::endl;
+
+
+		std::stringstream msg; //_oss.str();
+
+		#ifdef LOG_NO_ANSI
+			// Supress usage warnings
+			(void)ansi;
+			msg << _label;
+		#else
+			msg << "\033[" << _ansi << _label << "\033[0m";
+		#endif
+
+		// Remove leading path name, and file extension
+		_file.erase(0, _file.find_last_of("\\/")+1);
+		_file.erase(_file.find_last_of("."));
+
+		// Trim/expand to consistent size
+		if (_file.size() > _LOG_FILENAME_MAX) {
+			_file = _file.substr(0,_LOG_FILENAME_MAX-3);
+			_file += "...";
+		} else if (_file.size() < _LOG_FILENAME_MAX) {
+			_file += std::string(_LOG_FILENAME_MAX - _file.size(), ' ');
+		}
+
+		// Append file name and line
+		msg << "]:" << _file << ":";
+		msg << std::setw(3) << std::setfill(' ') << _line << ": ";
+		msg << std::string(indentLevel(0)*2, ' ');
+
+		// Append actual message 
+		msg << _oss.str();
+		
+		_oss.str(std::string());
+
+
+		// Format: [20:04:09][FATAL]:main.cpp:6: ...
+	
+		// Compare everything in message but timestamp
+		if (msg.str() == _lastLine("")) {
+			// SAME AS LAST TIME
+			_oss << "\r[" << _getTime() << "][" << msg.str() << " [" << _numRepeats(1) << "]";
+		} else {
+
+			// NEW MESSAGE
+			_lastLine(msg.str());
+			_numRepeats(-1);
+			_oss << std::endl;
+			_oss << "[" << _getTime() << "][" << msg.str();
+		}
+
+
+		std::cerr << _oss.str();
 
 		// If FATAL, crash and burn
-		if (currentLabel == "FATAL") {
+		if (_label == "FATAL") {
 
 			std::exit(EXIT_FAILURE);
 		}
@@ -122,33 +172,11 @@ public:
 
 	// Generate the stream to feed into
 	std::ostringstream& gen(std::string label, std::string ansi, std::string file, int line) {
-		// Format: [20:04:09][FATAL]:main.cpp:6: ...
-		currentLabel = label;
-		_oss << "[" << _getTime() << "][";
 
-		#ifdef LOG_NO_ANSI
-			// Supress usage warnings
-			(void)ansi;
-			_oss << label;
-		#else
-			_oss << "\033[" << ansi << label << "\033[0m";
-		#endif
-
-		// Remove leading path name, and file extension
-		file.erase(0, file.find_last_of("\\/")+1);
-		file.erase(file.find_last_of("."));
-
-		// Trim/expand to consistent size
-		if (file.size() > _LOG_FILENAME_MAX) {
-			file = file.substr(0,_LOG_FILENAME_MAX-3);
-			file += "...";
-		} else if (file.size() < _LOG_FILENAME_MAX) {
-			file += std::string(_LOG_FILENAME_MAX - file.size(), ' ');
-		}
-
-		_oss << "]:" << file << ":";
-		_oss << std::setw(3) << std::setfill(' ') << line << ": ";
-		_oss << std::string(indentLevel(0)*2, ' ');
+		_label = label;
+		_ansi = ansi;
+		_file = file;
+		_line = line;
 
 		return _oss;
 	}
@@ -159,6 +187,8 @@ public:
 		i += mod;
 		return i;
 	}
+
+
 
 private:
 	std::string _getTime() {
@@ -174,8 +204,33 @@ private:
 		std::string str(buffer);
 		return str;
 	}
-	std::string currentLabel;
+
+	static int _numRepeats(int n) {
+		static int repeats;
+		if (n == -1) {
+			repeats = 0;
+			return repeats;
+		} else {
+			return ++repeats;
+		}
+	}
+
+	static std::string _lastLine(std::string nextLine) {
+		static std::string s;
+
+		if (nextLine != "") {
+			s = nextLine;
+		}
+
+		return s;
+	}
+
 	std::ostringstream _oss;
+
+	std::string _label;
+	std::string _ansi;
+	std::string _file;
+	int _line;
 };
 
 class LoggerScope {
